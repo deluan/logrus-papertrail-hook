@@ -48,11 +48,12 @@ func TestWritingToTCP_FAKE(t *testing.T) {
 
 	tconn := &test_connect{}
 
-	hook, err := NewPapertrailTCPHook(&Hook{
+	hook, err := NewPapertrailHook(&Hook{
 		Host:     HOST,
 		Port:     PORT,
 		Hostname: "test.local",
 		Appname:  "test",
+		ConnType: ConnTCP,
 	})
 
 	if err == nil {

@@ -14,6 +14,11 @@ const (
 	format = "Jan 2 15:04:05"
 )
 
+const (
+	ConnTCP = "tcp"
+	ConnUDP = "udp"
+)
+
 // private interface to make tests with TCP conn
 type conn_int interface {
 	Write([]byte) (int, error)
@@ -22,14 +27,13 @@ type conn_int interface {
 // PapertrailHook to send logs to a logging service compatible with the Papertrail API.
 type Hook struct {
 	// Connection Details
-	Host string
-	Port int
+	Host     string
+	Port     int
+	ConnType string
 
 	// App Details
 	Appname  string
 	Hostname string
-
-	conn_type string
 
 	levels []logrus.Level
 
@@ -38,17 +42,25 @@ type Hook struct {
 
 // NewPapertrailHook creates a UDP hook to be added to an instance of logger.
 func NewPapertrailHook(hook *Hook) (*Hook, error) {
+	if hook.ConnType == ConnTCP {
+		return newPapertrailTCPHook(hook)
+	}
 	var err error
-	hook.conn_type = "udp"
-	hook.conn, err = net.Dial(hook.conn_type, fmt.Sprintf("%s:%d", hook.Host, hook.Port))
+	hook.ConnType = ConnUDP
+	hook.conn, err = net.Dial(hook.ConnType, fmt.Sprintf("%s:%d", hook.Host, hook.Port))
 	return hook, err
 }
 
 // NewPapertrailTCPHook creates a TCP/TLS hook to be added to an instance of logger.
+// Deprecated. Use NewPapertrailHook with hook.ConnType = ConnTCP
 func NewPapertrailTCPHook(hook *Hook) (*Hook, error) {
+	return newPapertrailTCPHook(hook)
+}
+
+func newPapertrailTCPHook(hook *Hook) (*Hook, error) {
 	var err error
-	hook.conn_type = "tcp"
-	hook.conn, err = tls.Dial(hook.conn_type, fmt.Sprintf("%s:%d", hook.Host, hook.Port), nil)
+	hook.ConnType = ConnTCP
+	hook.conn, err = tls.Dial(hook.ConnType, fmt.Sprintf("%s:%d", hook.Host, hook.Port), nil)
 	return hook, err
 }
 
@@ -60,7 +72,7 @@ func (hook *Hook) Fire(entry *logrus.Entry) error {
 
 	bytesWritten, err := hook.conn.Write([]byte(payload))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to send log line to Papertrail via %s. Wrote %d bytes before error: %v", hook.conn_type, bytesWritten, err)
+		fmt.Fprintf(os.Stderr, "Unable to send log line to Papertrail via %s. Wrote %d bytes before error: %v", hook.ConnType, bytesWritten, err)
 		return err
 	}
 
