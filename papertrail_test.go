@@ -27,10 +27,11 @@ func TestWritingToUDP(t *testing.T) {
 	udp.SetAddr(fmt.Sprintf(":%d", PORT))
 
 	hook, err := NewPapertrailHook(&Hook{
-		Host:     HOST,
-		Port:     PORT,
-		Hostname: "test.local",
-		Appname:  "test",
+		Host:       HOST,
+		Port:       PORT,
+		Hostname:   "test.local",
+		Appname:    "test",
+		BufferSize: 10,
 	})
 	if err != nil {
 		t.Errorf("Unable to connect to local UDP server.")

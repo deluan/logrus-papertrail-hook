@@ -23,17 +23,18 @@ const (
 // PapertrailHook to send logs to a logging service compatible with the Papertrail API.
 type Hook struct {
 	// Connection Details
-	Host     string
-	Port     int
-	ConnType string
+	Host       string
+	Port       int
+	ConnType   string
+	BufferSize int
 
 	// App Details
 	Appname  string
 	Hostname string
 
+	// Internal state
 	levels []logrus.Level
-
-	conn io.Writer
+	conn   io.Writer
 }
 
 // NewPapertrailHook creates a UDP hook to be added to an instance of logger.
@@ -45,6 +46,9 @@ func NewPapertrailHook(hook *Hook) (*Hook, error) {
 	} else {
 		hook.ConnType = ConnUDP
 		hook.conn, err = net.Dial(hook.ConnType, addr)
+	}
+	if hook.BufferSize > 0 {
+		hook.conn = newBufwriter(hook.conn, hook.BufferSize)
 	}
 	return hook, err
 }
