@@ -33,31 +33,27 @@ type Hook struct {
 
 	levels []logrus.Level
 
-	conn   io.Writer
+	conn io.Writer
 }
 
 // NewPapertrailHook creates a UDP hook to be added to an instance of logger.
 func NewPapertrailHook(hook *Hook) (*Hook, error) {
-	if hook.ConnType == ConnTCP {
-		return newPapertrailTCPHook(hook)
-	}
 	var err error
-	hook.ConnType = ConnUDP
-	hook.conn, err = net.Dial(hook.ConnType, fmt.Sprintf("%s:%d", hook.Host, hook.Port))
+	var addr = fmt.Sprintf("%s:%d", hook.Host, hook.Port)
+	if hook.ConnType == ConnTCP {
+		hook.conn, err = tls.Dial(hook.ConnType, addr, nil)
+	} else {
+		hook.ConnType = ConnUDP
+		hook.conn, err = net.Dial(hook.ConnType, addr)
+	}
 	return hook, err
 }
 
 // NewPapertrailTCPHook creates a TCP/TLS hook to be added to an instance of logger.
 // Deprecated. Use NewPapertrailHook with hook.ConnType = ConnTCP
 func NewPapertrailTCPHook(hook *Hook) (*Hook, error) {
-	return newPapertrailTCPHook(hook)
-}
-
-func newPapertrailTCPHook(hook *Hook) (*Hook, error) {
-	var err error
 	hook.ConnType = ConnTCP
-	hook.conn, err = tls.Dial(hook.ConnType, fmt.Sprintf("%s:%d", hook.Host, hook.Port), nil)
-	return hook, err
+	return NewPapertrailHook(hook)
 }
 
 // Fire is called when a log event is fired.
