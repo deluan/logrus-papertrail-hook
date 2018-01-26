@@ -3,6 +3,7 @@ package logrus_papertrail
 import (
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"time"
@@ -19,11 +20,6 @@ const (
 	ConnUDP = "udp"
 )
 
-// private interface to make tests with TCP conn
-type conn_int interface {
-	Write([]byte) (int, error)
-}
-
 // PapertrailHook to send logs to a logging service compatible with the Papertrail API.
 type Hook struct {
 	// Connection Details
@@ -37,7 +33,7 @@ type Hook struct {
 
 	levels []logrus.Level
 
-	conn conn_int
+	conn   io.Writer
 }
 
 // NewPapertrailHook creates a UDP hook to be added to an instance of logger.
